@@ -213,13 +213,19 @@ if analyze_clicked and video_path:
     analytics = FootballAnalytics(input_video=video_path)
     analytics.process_video()
 
+
     report_path = repo_root / "output" / "reports" / "report.xlsx"
 
     if report_path.exists():
         df = pd.read_excel(report_path, sheet_name="Players")
     else:
-        df = pd.DataFrame()
-        st.warning(f"report.xlsx not found at: {report_path}")
+        # fallback: some runs write directly via config.output_dir / reports / report.xlsx
+        alt_report_path = Path("./output/reports/report.xlsx")
+        if alt_report_path.exists():
+            df = pd.read_excel(alt_report_path, sheet_name="Players")
+        else:
+            df = pd.DataFrame()
+            st.warning(f"report.xlsx not found at: {report_path}")
 
     # Find newest tracked video for playback
     tracked_video = None
