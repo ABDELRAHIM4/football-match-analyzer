@@ -313,9 +313,9 @@ if st.session_state.analysis_done:
                 fig1 = px.bar(
                     df,
                     x="Player_id",
-                    y=["Max Speed (m/s)", "Avg Speed(m/s)"],
+                    y=["Max Speed", "Avg Speed"],
                     barmode="group",
-                    title="Player Speed (Max vs Avg)",
+                    title="Player Speed (Max vs Avg) [m/s]",
                 )
                 st.plotly_chart(fig1, use_container_width=True)
 
