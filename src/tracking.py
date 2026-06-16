@@ -46,13 +46,24 @@ class Track:
         return np.mean(distances) * fps
 
 class FootballTracker:
-    def __init__(self, max_age: int = 30, min_hits = 3):
+    def __init__(
+        self,
+        max_age: int = 30,
+        min_hits: int = 3,
+        merge_distance_px: float = 50.0,
+        merge_time_gap_frames: int = 30,
+    ):
         self.tracks = []
         self.next_id = 0
         self.max_age = max_age
         self.min_hits = min_hits
+        # If a new track appears very close to an existing (but temporarily lost) track,
+        # merge it to keep IDs stable (simple re-identification heuristic).
+        self.merge_distance_px = merge_distance_px
+        self.merge_time_gap_frames = merge_time_gap_frames
     def update(self, detections: List[Tuple]) -> List[Track]:
         detection_centers = []
+        matched_detection_centers: List[bool] = []
         for det in detections:
             x1, y1,x2,y2 = det[:4]
             center = ((x1 + x2) // 2, (y1 + y2) // 2)
@@ -75,7 +86,23 @@ class FootballTracker:
             for i, c in enumerate(detection_centers):
                 if i not in matched_detections:
                     bbox = detections[i][:4]
-                    self._add_track(bbox, c)
+                    # try to merge with a recent (possibly aged) track to keep a single ID
+                    merged = False
+                    for tr in self.tracks:
+                        if not tr.centers:
+                            continue
+                        if tr.hit_streak < self.min_hits:
+                            continue
+                        last_center = tr.centers[-1]
+                        dist_px = np.linalg.norm(np.array(last_center) - np.array(c))
+                        # simple temporal gate using track.age as a proxy for recentness
+                        if dist_px < self.merge_distance_px and tr.age <= (self.merge_time_gap_frames + 1):
+                            tr.update(c)
+                            merged = True
+                            break
+                    if not merged:
+                        self._add_track(bbox, c)
+
             self.tracks = [track for i, track in enumerate(self.tracks) if i in matched_tracks or track.age < self.max_age]
         
         elif detection_centers:
