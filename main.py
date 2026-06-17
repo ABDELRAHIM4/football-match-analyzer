@@ -109,9 +109,12 @@ class FootballAnalytics:
         """calulate metrics"""
         player_metrics = {}
         for player_id, positions in player_positions.items():
-            if len(positions) > 10:
+            # For short videos, players may not have enough points.
+            # Lower threshold so we still compute metrics for clips like ~10s.
+            if len(positions) > 5:
                 met = self.metrics.calculate_player_speed(positions)
                 player_metrics[player_id] = met
+
         df = self.metrics.generate_report(player_metrics)
         report_path = config.output_dir / 'reports' / 'report.xlsx'
         with pd.ExcelWriter(report_path) as writer:
