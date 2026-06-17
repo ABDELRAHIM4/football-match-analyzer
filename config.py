@@ -6,7 +6,7 @@ from pathlib import Path
 @dataclass
 class Config:
     # File paths
-    model_path: str = "yolo11n.pt"
+    model_path: str = "yolo11l.pt"
     input_video: str = "c:/Users/Abdo/Downloads/scoring 102.avi/scoring 102.avi"
 
     output_dir: Path = Path("./output")

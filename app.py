@@ -173,8 +173,11 @@ if analyze_clicked and video_path:
     # YOLO tracking
     status = st.empty()
     status.text("Loading model")
-    # Higher accuracy model
-    model = YOLO("yolo11s.pt")
+    # Use a checkpoint that is known to load correctly.
+    # If a .pt file is corrupted, Streamlit will crash at startup when YOLO loads it.
+    model = YOLO("yolo11l.pt")
+
+
 
 
     repo_root = Path(__file__).resolve().parent
@@ -281,8 +284,10 @@ if st.session_state.analysis_done:
                     st.image(
                         cv2.cvtColor(frame_prev, cv2.COLOR_BGR2RGB),
                         caption="📸 Preview (first frame)",
-                        use_container_width=True,
+                        width="stretch",
                     )
+
+
             except Exception:
                 pass
 
@@ -340,7 +345,8 @@ if st.session_state.analysis_done:
                     barmode="group",
                     title="Player Speed (Max vs Avg) [m/s]",
                 )
-                st.plotly_chart(fig1, use_container_width=True)
+                st.plotly_chart(fig1, width='stretch')
+
 
             with sub2:
                 if "Totale Distance" in df.columns and "Avg Speed" in df.columns:
@@ -352,4 +358,4 @@ if st.session_state.analysis_done:
                         size="Totale Distance",
                         title="Avg Speed vs Total Distance",
                     )
-                    st.plotly_chart(fig2, use_container_width=True)
+                    st.plotly_chart(fig2, width='stretch')
