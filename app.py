@@ -173,7 +173,9 @@ if analyze_clicked and video_path:
     # YOLO tracking
     status = st.empty()
     status.text("Loading model")
-    model = YOLO("yolo11n.pt")
+    # Higher accuracy model
+    model = YOLO("yolo11s.pt")
+
 
     repo_root = Path(__file__).resolve().parent
     output_dir = repo_root / f"temp_output_{datetime.now().strftime('%Y%M%d_%H%M%S')}"
