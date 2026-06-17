@@ -290,9 +290,20 @@ if st.session_state.analysis_done:
     with tab2:
         st.subheader("player heatmap")
         # Placeholder heatmap until you export real grid heat data
-        heat_data = np.zeros((50, 34), dtype=float)
+        heat_data = np.zeros((50, 34), dtype=np.float32)
         fig, ax = plt.subplots(figsize=(10, 7))
-        im = ax.imshow(heat_data, cmap="hot", interpolation="bilinear", vmin=0, vmax=1)
+
+        # Use nearest interpolation to avoid "triangles"/interpolation artifacts on grid data
+        im = ax.imshow(
+            heat_data,
+            cmap="hot",
+            interpolation="nearest",
+            vmin=0,
+            vmax=1,
+            origin="lower",
+            aspect="auto",
+        )
+
         ax.set_title("Player positioning heatmap")
         ax.set_xlabel("Pitch Width")
         ax.set_ylabel("Pitch Length")
