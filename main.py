@@ -71,10 +71,11 @@ class FootballAnalytics:
 
             # Save locations
             for track in tracks:
-                if track.hit_streak >= 3:
+                if track.hit_streak >= 1:
                     if track.track_id not in all_player_pos:
                         all_player_pos[track.track_id] = []
-                    all_player_pos[track.track_id].append(track.centers[-1])                    
+                    all_player_pos[track.track_id].append(track.centers[-1])
+
             #draw results on frame
             frame = self.draw_results(frame, tracks, detections['ball'])
             out.write(frame)
@@ -111,7 +112,8 @@ class FootballAnalytics:
         for player_id, positions in player_positions.items():
             # For short videos, players may not have enough points.
             # Lower threshold so we still compute metrics for clips like ~10s.
-            if len(positions) > 5:
+            if len(positions) > 2:
+
                 met = self.metrics.calculate_player_speed(positions)
                 player_metrics[player_id] = met
 
