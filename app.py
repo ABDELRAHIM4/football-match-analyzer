@@ -314,10 +314,20 @@ if st.session_state.analysis_done:
         st.subheader("Indivivual Player analysis")
         df = st.session_state.last_df if st.session_state.last_df is not None else pd.DataFrame()
 
+        # Always show diagnostics so we can see why the table is empty
+        if df is None:
+            st.warning("No dataframe in session state.")
+        else:
+            st.caption(f"Rows in report dataframe: {len(df)}")
+
         if df.empty:
-            st.warning("No player metrics to display.")
+            st.info(
+                "No player metrics to display. "
+                "This usually means report.xlsx was not created correctly or players were not tracked enough."
+            )
         else:
             st.dataframe(df, width="stretch")
+
 
             sub1, sub2 = st.tabs(["Visualization", "Visualization 2"])
             with sub1:
