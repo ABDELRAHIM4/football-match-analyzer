@@ -83,17 +83,45 @@ class FootballAnalytics:
         out.release()
 
         # Calculate metrics
-        # If tracking is unstable on short clips, we may end up with too few sampled tracks.
-        # Filter out tracks with too few distinct points (ignore single-point noise).
+        # Filter out tracks with too few points (ignore single-point noise).
         cleaned_player_pos = {}
         for pid, pts in all_player_pos.items():
-            # require at least 3 points for a meaningful speed estimate
             if len(pts) >= 3:
                 cleaned_player_pos[pid] = pts
 
-        self._calculate_metrics(cleaned_player_pos)
+        # Stabilize paths: remove extreme real-world jumps that usually come from bad track association.
+        # Note: speed in m/s uses per-frame time (1/fps). So max_jump_m should be based on fps too.
+        stabilized_player_pos = {}
+        # Increase safety cap to avoid filtering out all tracks due to occasional track association noise.
+        # Typical sprint speed is ~8-12 m/s; we allow higher (still bounded) to keep enough samples.
+        max_speed_mps = 60.0
+        max_jump_m = max_speed_mps / (fps if fps else 30.0)  # meters allowed between consecutive frames
 
+        for pid, pts in cleaned_player_pos.items():
+            if len(pts) < 3:
+                continue
+
+            kept = [pts[0]]
+            prev = pts[0]
+
+            for cur in pts[1:]:
+                real_prev = self.homography.pixel_to_real([prev])[0]
+                real_cur = self.homography.pixel_to_real([cur])[0]
+                jump_m = float(np.linalg.norm(real_cur - real_prev))
+
+                if jump_m <= max_jump_m:
+                    kept.append(cur)
+                    prev = cur
+
+            # keep only meaningful tracks
+            if len(kept) >= 3:
+                stabilized_player_pos[pid] = kept
+
+
+        # Compute & write report
+        self._calculate_metrics(stabilized_player_pos)
         return output_path
+
     def draw_results(self, frame, tracks, ball):
         """draw boxes and nummbers on video"""
         for track in tracks:
