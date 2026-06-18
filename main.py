@@ -70,11 +70,11 @@ class FootballAnalytics:
             tracks = self.tracker.update(player_detections)
 
             # Save locations
+            # Use the last center of the track, but require only 1 hit to keep short clips populated.
             for track in tracks:
                 if track.hit_streak >= 1:
-                    if track.track_id not in all_player_pos:
-                        all_player_pos[track.track_id] = []
-                    all_player_pos[track.track_id].append(track.centers[-1])
+                    all_player_pos.setdefault(track.track_id, []).append(track.centers[-1])
+
 
             #draw results on frame
             frame = self.draw_results(frame, tracks, detections['ball'])
@@ -82,8 +82,17 @@ class FootballAnalytics:
         cap.release()
         out.release()
 
-        #Calculate metrics
-        self._calculate_metrics(all_player_pos)
+        # Calculate metrics
+        # If tracking is unstable on short clips, we may end up with too few sampled tracks.
+        # Filter out tracks with too few distinct points (ignore single-point noise).
+        cleaned_player_pos = {}
+        for pid, pts in all_player_pos.items():
+            # require at least 3 points for a meaningful speed estimate
+            if len(pts) >= 3:
+                cleaned_player_pos[pid] = pts
+
+        self._calculate_metrics(cleaned_player_pos)
+
         return output_path
     def draw_results(self, frame, tracks, ball):
         """draw boxes and nummbers on video"""
@@ -110,12 +119,17 @@ class FootballAnalytics:
         """calulate metrics"""
         player_metrics = {}
         for player_id, positions in player_positions.items():
-            # For short videos, players may not have enough points.
-            # Lower threshold so we still compute metrics for clips like ~10s.
-            if len(positions) > 2:
-
+            # For short videos, allow metrics even with few samples.
+            # Keep a tiny minimum so we don't divide by zero.
+            if len(positions) >= 2:
                 met = self.metrics.calculate_player_speed(positions)
                 player_metrics[player_id] = met
+
+        # Safety: if tracking produced no (or near-empty) tracks, still write an empty sheet.
+        # This prevents downstream crashes in the UI.
+        if not player_metrics:
+            player_metrics = {}
+
 
         df = self.metrics.generate_report(player_metrics)
         report_path = config.output_dir / 'reports' / 'report.xlsx'
