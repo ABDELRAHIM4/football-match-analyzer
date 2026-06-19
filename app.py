@@ -230,12 +230,10 @@ if analyze_clicked and video_path:
         st.error(f"Failed to read report.xlsx from {report_path}: {e}")
         df = pd.DataFrame()
 
-    # Diagnostics (so we can debug why Streamlit shows 0 rows)
-    st.caption(f"report_path used: {report_path}")
-    st.caption(f"report rows after read_excel: {len(df)}")
-    st.caption(f"df columns: {list(df.columns) if isinstance(df, pd.DataFrame) else 'N/A'}")
+    # Diagnostics removed (no extra captions in UI)
 
     # Force UI state to reflect freshly read df
+
     st.session_state.last_df = df
     st.session_state.analysis_done = True
 
@@ -269,7 +267,7 @@ if analyze_clicked and video_path:
 if st.session_state.analysis_done:
     st.header("Analyze Results")
 
-    tab1, tab2, tab3 = st.tabs(["Tracked video", "Heatmaps", "Player Analysis"])
+    tab1, tab2= st.tabs(["Tracked video", "Player Analysis"])
 
     with tab1:
         st.subheader("Tracked video")
@@ -309,7 +307,7 @@ if st.session_state.analysis_done:
 
 
 
-    with tab3:
+    with tab2:
         st.subheader("Indivivual Player analysis")
         df = st.session_state.last_df if st.session_state.last_df is not None else pd.DataFrame()
 
