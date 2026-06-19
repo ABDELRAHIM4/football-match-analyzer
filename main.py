@@ -89,11 +89,9 @@ class FootballAnalytics:
             if len(pts) >= 3:
                 cleaned_player_pos[pid] = pts
 
-        # Stabilize paths: remove extreme real-world jumps that usually come from bad track association.
-        # Note: speed in m/s uses per-frame time (1/fps). So max_jump_m should be based on fps too.
+        
         stabilized_player_pos = {}
-        # Increase safety cap to avoid over-filtering due to occasional association noise.
-        # Note: keep units consistent: max_jump_m is meters allowed between consecutive frames.
+        
         max_speed_mps = 60.0
         max_jump_m = max_speed_mps / (fps if fps else 30.0)
 
@@ -174,8 +172,11 @@ class FootballAnalytics:
 
         df = self.metrics.generate_report(player_metrics)
         report_path = config.output_dir / 'reports' / 'report.xlsx'
+        # Ensure parent directory exists (fixes OSError on some environments)
+        report_path.parent.mkdir(parents=True, exist_ok=True)
         with pd.ExcelWriter(report_path) as writer:
             df.to_excel(writer, sheet_name='Players', index=False)
+    
     
 def main():
     system = FootballAnalytics()

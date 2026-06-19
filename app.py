@@ -239,6 +239,7 @@ if analyze_clicked and video_path:
 
 
 
+
     # Find newest tracked video for playback
     tracked_video = None
     if save_output:
