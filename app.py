@@ -218,19 +218,25 @@ if analyze_clicked and video_path:
     analytics = FootballAnalytics(input_video=video_path)
     analytics.process_video()
 
-
-    # main.py writes here: config.output_dir / reports / report.xlsx
+    # Reload report after processing to avoid stale reads
     report_path = config.output_dir / "reports" / "report.xlsx"
-
+    df = pd.DataFrame()
     try:
         if report_path.exists():
             df = pd.read_excel(report_path, sheet_name="Players")
         else:
             st.warning(f"report.xlsx not found at: {report_path}")
-            df = pd.DataFrame()
     except Exception as e:
         st.error(f"Failed to read report.xlsx from {report_path}: {e}")
         df = pd.DataFrame()
+
+    # Force UI state to reflect freshly read df
+    st.session_state.last_df = df
+    st.session_state.analysis_done = True
+
+    # Find newest tracked video for playback
+    tracked_video = None
+
 
 
     # Find newest tracked video for playback
@@ -297,12 +303,9 @@ if st.session_state.analysis_done:
 
     with tab2:
         st.subheader("player heatmap")
-        # Heatmap واقعی مبنية على player paths عبر homography (mètres)
+        
         heat_data = np.zeros((50, 34), dtype=np.float32)
         if isinstance(st.session_state.last_df, pd.DataFrame) and not st.session_state.last_df.empty:
-            # في حال ما عندنا إلا report.xlsx بدون حفظ المسارات، لا نستطيع بناء heatmap بدقة.
-            # لذلك نعمل heatmap مبدئيًا مبني على وجود players فقط.
-            # (سيتم استبداله لاحقًا بحفظ player_positions من main.py)
             heat_data += 0.0
 
         fig, ax = plt.subplots(figsize=(10, 7))
