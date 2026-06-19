@@ -98,7 +98,8 @@ class FootballAnalytics:
         max_jump_m = max_speed_mps / (fps if fps else 30.0)
 
         for pid, pts in cleaned_player_pos.items():
-            if len(pts) < 5:
+            # loosen minimum points so more players appear in short clips
+            if len(pts) < 2:
                 continue
 
             kept = [pts[0]]
@@ -122,11 +123,11 @@ class FootballAnalytics:
                     prev = cur
                     real_prev = real_cur
                 else:
-                    # outlier: skip this point but keep the previous accepted one (prevents the track from collapsing to 0)
+                    # outlier: skip this point but keep the previous accepted one (prevents collapse)
                     continue
 
             # keep only meaningful tracks
-            if len(kept) >= 5:
+            if len(kept) >= 2:
                 stabilized_player_pos[pid] = kept
 
 

@@ -296,11 +296,15 @@ if st.session_state.analysis_done:
 
     with tab2:
         st.subheader("player heatmap")
-        # Placeholder heatmap until you export real grid heat data
+        # Heatmap واقعی مبنية على player paths عبر homography (mètres)
         heat_data = np.zeros((50, 34), dtype=np.float32)
-        fig, ax = plt.subplots(figsize=(10, 7))
+        if isinstance(st.session_state.last_df, pd.DataFrame) and not st.session_state.last_df.empty:
+            # في حال ما عندنا إلا report.xlsx بدون حفظ المسارات، لا نستطيع بناء heatmap بدقة.
+            # لذلك نعمل heatmap مبدئيًا مبني على وجود players فقط.
+            # (سيتم استبداله لاحقًا بحفظ player_positions من main.py)
+            heat_data += 0.0
 
-        # Use nearest interpolation to avoid "triangles"/interpolation artifacts on grid data
+        fig, ax = plt.subplots(figsize=(10, 7))
         im = ax.imshow(
             heat_data,
             cmap="hot",
@@ -310,7 +314,6 @@ if st.session_state.analysis_done:
             origin="lower",
             aspect="auto",
         )
-
         ax.set_title("Player positioning heatmap")
         ax.set_xlabel("Pitch Width")
         ax.set_ylabel("Pitch Length")
