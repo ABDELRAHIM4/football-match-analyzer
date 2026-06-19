@@ -92,29 +92,41 @@ class FootballAnalytics:
         # Stabilize paths: remove extreme real-world jumps that usually come from bad track association.
         # Note: speed in m/s uses per-frame time (1/fps). So max_jump_m should be based on fps too.
         stabilized_player_pos = {}
-        # Increase safety cap to avoid filtering out all tracks due to occasional track association noise.
-        # Typical sprint speed is ~8-12 m/s; we allow higher (still bounded) to keep enough samples.
+        # Increase safety cap to avoid over-filtering due to occasional association noise.
+        # Note: keep units consistent: max_jump_m is meters allowed between consecutive frames.
         max_speed_mps = 60.0
-        max_jump_m = max_speed_mps / (fps if fps else 30.0)  # meters allowed between consecutive frames
+        max_jump_m = max_speed_mps / (fps if fps else 30.0)
 
         for pid, pts in cleaned_player_pos.items():
-            if len(pts) < 3:
+            if len(pts) < 5:
                 continue
 
             kept = [pts[0]]
             prev = pts[0]
 
+            # last accepted point in real coordinates (so we don't recompute too much)
+            real_prev = self.homography.pixel_to_real([prev])[0]
+
             for cur in pts[1:]:
-                real_prev = self.homography.pixel_to_real([prev])[0]
                 real_cur = self.homography.pixel_to_real([cur])[0]
+
+                # discard points that map outside the pitch area (helps when homography/ref points are imperfect)
+                x_m, y_m = float(real_cur[0]), float(real_cur[1])
+                if not (0.0 <= x_m <= 105.0 and 0.0 <= y_m <= 68.0):
+                    continue
+
                 jump_m = float(np.linalg.norm(real_cur - real_prev))
 
                 if jump_m <= max_jump_m:
                     kept.append(cur)
                     prev = cur
+                    real_prev = real_cur
+                else:
+                    # outlier: skip this point but keep the previous accepted one (prevents the track from collapsing to 0)
+                    continue
 
             # keep only meaningful tracks
-            if len(kept) >= 3:
+            if len(kept) >= 5:
                 stabilized_player_pos[pid] = kept
 
 
