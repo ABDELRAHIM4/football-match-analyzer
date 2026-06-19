@@ -84,10 +84,13 @@ class FootballAnalytics:
 
         # Calculate metrics
         # Filter out tracks with too few points (ignore single-point noise).
+        # For short clips (like 10s), require fewer points so we still compute metrics.
         cleaned_player_pos = {}
+        min_points_for_metrics = 2
         for pid, pts in all_player_pos.items():
-            if len(pts) >= 3:
+            if len(pts) >= min_points_for_metrics:
                 cleaned_player_pos[pid] = pts
+
 
         
         stabilized_player_pos = {}
