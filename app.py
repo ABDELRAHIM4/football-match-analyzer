@@ -230,6 +230,11 @@ if analyze_clicked and video_path:
         st.error(f"Failed to read report.xlsx from {report_path}: {e}")
         df = pd.DataFrame()
 
+    # Diagnostics (so we can debug why Streamlit shows 0 rows)
+    st.caption(f"report_path used: {report_path}")
+    st.caption(f"report rows after read_excel: {len(df)}")
+    st.caption(f"df columns: {list(df.columns) if isinstance(df, pd.DataFrame) else 'N/A'}")
+
     # Force UI state to reflect freshly read df
     st.session_state.last_df = df
     st.session_state.analysis_done = True
@@ -302,28 +307,7 @@ if st.session_state.analysis_done:
         else:
             st.warning("Tracked video not found.")
 
-    with tab2:
-        st.subheader("player heatmap")
-        
-        heat_data = np.zeros((50, 34), dtype=np.float32)
-        if isinstance(st.session_state.last_df, pd.DataFrame) and not st.session_state.last_df.empty:
-            heat_data += 0.0
 
-        fig, ax = plt.subplots(figsize=(10, 7))
-        im = ax.imshow(
-            heat_data,
-            cmap="hot",
-            interpolation="nearest",
-            vmin=0,
-            vmax=1,
-            origin="lower",
-            aspect="auto",
-        )
-        ax.set_title("Player positioning heatmap")
-        ax.set_xlabel("Pitch Width")
-        ax.set_ylabel("Pitch Length")
-        plt.colorbar(im, ax=ax, label="Intensity")
-        st.pyplot(fig)
 
     with tab3:
         st.subheader("Indivivual Player analysis")

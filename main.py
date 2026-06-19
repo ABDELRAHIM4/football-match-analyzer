@@ -91,6 +91,11 @@ class FootballAnalytics:
             if len(pts) >= min_points_for_metrics:
                 cleaned_player_pos[pid] = pts
 
+        print(f"[debug] total_tracks={len(all_player_pos)} min_points_for_metrics={min_points_for_metrics}")
+        for pid, pts in list(all_player_pos.items())[:10]:
+            print(f"[debug] pid={pid} raw_points={len(pts)}")
+
+
 
         
         stabilized_player_pos = {}
@@ -112,20 +117,23 @@ class FootballAnalytics:
             for cur in pts[1:]:
                 real_cur = self.homography.pixel_to_real([cur])[0]
 
-                # discard points that map outside the pitch area (helps when homography/ref points are imperfect)
+                # NOTE: For short clips and potentially imperfect reference points,
+                # avoid dropping points aggressively. This keeps enough samples
+                # to compute speeds.
                 x_m, y_m = float(real_cur[0]), float(real_cur[1])
-                if not (0.0 <= x_m <= 105.0 and 0.0 <= y_m <= 68.0):
-                    continue
+                in_bounds = (0.0 <= x_m <= 105.0 and 0.0 <= y_m <= 68.0)
 
                 jump_m = float(np.linalg.norm(real_cur - real_prev))
+                jump_ok = (jump_m <= max_jump_m) or not in_bounds
 
-                if jump_m <= max_jump_m:
+                if jump_ok:
                     kept.append(cur)
                     prev = cur
                     real_prev = real_cur
                 else:
-                    # outlier: skip this point but keep the previous accepted one (prevents collapse)
+                    # outlier: skip this point but keep the previous accepted one
                     continue
+
 
             # keep only meaningful tracks
             if len(kept) >= 2:
@@ -133,6 +141,12 @@ class FootballAnalytics:
 
 
         # Compute & write report
+        # Debug: log how many tracks/samples are available for metrics
+        # (stdout will show in Streamlit terminal logs)
+        print(f"[metrics] players_tracked={len(all_player_pos)} cleaned={len(cleaned_player_pos)} stabilized={len(stabilized_player_pos)}")
+        for pid, pts in list(stabilized_player_pos.items())[:5]:
+            print(f"[metrics] pid={pid} points={len(pts)}")
+
         self._calculate_metrics(stabilized_player_pos)
         return output_path
 

@@ -1,6 +1,7 @@
 # config.py
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+
 
 
 @dataclass
@@ -28,6 +29,18 @@ class Config:
     # Pitch reference points (for Homography)
     # Pixel coordinates in the video -> Real-world coordinates (meters)
     pitch_reference_points: dict = None
+
+    # YOLO class mapping (important)
+    # Update these based on your model's class IDs.
+    # By default we assume: players != 0 and ball == 0.
+    # Common defaults for football models using class 0 = ball.
+    # If your model uses a different mapping, override these.
+    player_class_ids: list[int] = field(default_factory=lambda: [0])  # default: class 0 is players
+    ball_class_ids: list[int] = field(default_factory=list)     # default: no separate ball class
+
+
+
+
 
     def __post_init__(self):
         self.output_dir.mkdir(parents=True, exist_ok=True)
